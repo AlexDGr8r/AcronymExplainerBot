@@ -1,31 +1,37 @@
 #!/usr/bin/env python
 
 import time
-# import json
+import json
 import praw
 import OAuth2Util
+from collections import deque
 
-user_agent = "PRAW:Acronym Explainer:v0.1 by /u/AlexDGr8r"
-r = praw.Reddit(user_agent=user_agent)
+USER_AGENT = "PRAW:Acronym Explainer:v0.1 by /u/AlexDGr8r"
+
+r = praw.Reddit(user_agent=USER_AGENT)
 o = OAuth2Util.OAuth2Util(r)
-
-already_done = []
+cache = deque(maxlen=200)
 search_words = ["unbgbbiivchidctiicbg"]
+
+# Load JSON data from config.json
+with open('config.json') as data_file:
+    config = json.load(data_file)
+
+# Compile subreddits we want to pull the comments from
+subreddits = ''
+for sub in config['subreddits']:
+    subreddits += sub + '+'
+subreddits = subreddits[:-1]
 
 while True:
     o.refresh()
-    print 'Checking subreddit...'
-    subreddit = r.get_subreddit('alexthegreater')
-    for submission in subreddit.get_new(limit=10):
-        if submission.is_self:
-            print 'Self submission found'
-            self_text = submission.selftext.lower()
-            has_referenced = any(string in self_text for string in search_words)
-            if submission.id not in already_done and has_referenced:
-                print 'Have not checked this post yet'
-                print 'sending message'
-                msg = '[Link to reference!](%s)' % submission.short_link
-                r.send_message('AlexDGr8r', 'Found a reference!', msg)
-                already_done.append(submission.id)
+    print 'Checking subreddits...'
+    multireddits = r.get_subreddit(subreddits)
+    comments = multireddits.get_comments()
+    for comment in comments:
+        if comment.id in cache:
+            break
+        cache.append(comment.id)
+
     print 'Going to sleep'
     time.sleep(10)
