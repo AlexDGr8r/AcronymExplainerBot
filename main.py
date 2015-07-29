@@ -3,28 +3,17 @@
 import time
 # import json
 import praw
-from praw.errors import InvalidUser, InvalidUserPass, RateLimitExceeded, HTTPException, OAuthAppRequired
-from praw.objects import Comment, Submission
+import OAuth2Util
 
-user_agent = "PRAW:UNBGBBIIVCHIDCTIICBG Monitor:v0.1 by /u/AlexDGr8r"
+user_agent = "PRAW:Acronym Explainer:v0.1 by /u/AlexDGr8r"
 r = praw.Reddit(user_agent=user_agent)
-try:
-    r.refresh_access_information();
-    print 'Logged in with OAuth'
-except (HTTPException, OAuthAppRequired) as e:
-    try:
-        r.login()
-    except InvalidUser as e:
-        raise InvalidUser("User does not exist.", e)
-    except InvalidUserPass as e:
-        raise InvalidUserPass("Specified an incorrect password.", e)
-    except RateLimitExceeded as e:
-        raise RateLimitExceeded("You're doing that too much.", e)
+o = OAuth2Util.OAuth2Util(r)
 
 already_done = []
 search_words = ["unbgbbiivchidctiicbg"]
 
 while True:
+    o.refresh()
     print 'Checking subreddit...'
     subreddit = r.get_subreddit('alexthegreater')
     for submission in subreddit.get_new(limit=10):
