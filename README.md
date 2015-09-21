@@ -1,4 +1,4 @@
-# UNBGBBIIVCHIDCTIICBGBot
-Upvoted Not Because Girl, But Because It Is Very Cool – However, I Do Concede That I Initially Clicked Because Girl subreddit bot
+# Acronym Explainer Bot
+A Reddit bot that explains acronyms upon a request via a comment on Reddit.
 
-Checks comments in popular subreddits for reference to /r/UNBGBBIIVCHIDCTIICBG and posts a comment to explain the meaning of this super long acronym.
+This project is currently work in progress and is being slowed due to college course work. 
