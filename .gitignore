@@ -60,3 +60,5 @@ target/
 praw.ini
 oauth.txt
 *.dat
+test.py
+*.db

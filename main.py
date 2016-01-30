@@ -12,7 +12,7 @@ CACHE_FILE_NAME = 'cache.dat'
 
 r = praw.Reddit(user_agent=USER_AGENT)
 o = OAuth2Util.OAuth2Util(r)
-search_words = ["unbgbbiivchidctiicbg"]
+cache = deque(maxlen=200)
 
 def load_cache(filename):
     try:
@@ -27,6 +27,14 @@ def save_cache(filename):
     for item in cache:
         f.write('%s\n' % item)
     f.close()
+
+# TODO rework for database
+def reply_to_comment(comment, acronym):
+    text = "For those that do not understand what %s stands for, I'm here to help!\n\n### Explanation:\n\n" % acronym
+    text += acronyms[acronym] + "\n\n*****\n\n"
+    text += "*I am simply a bot. If the information I've displayed is incorrect, please message my creator /u/AlexDGr8r*"
+    comment.reply(text)
+    print('Replied to a comment')
 
 # Load JSON data from config.json
 with open('config.json') as data_file:
@@ -51,14 +59,15 @@ try:
             if comment.id in cache:
                 print('Breaking...')
                 break
+            if comment.author.name == "AcronymExplainerBot":
+                print('ignoring my own comment')
+                continue
             cache.append(comment.id)
             print('appended to cache')
-            found = any(string in comment.body.lower() for string in search_words)
-            if found:
-                print('found something')
+            # TODO USE sqlite db instead of json
 
         print 'Going to sleep'
-        time.sleep(10)
+        time.sleep(2)
 except (KeyboardInterrupt, SystemExit):
     save_cache(CACHE_FILE_NAME)
     print('Saved cache')
