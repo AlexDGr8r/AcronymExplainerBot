@@ -62,3 +62,4 @@ oauth.txt
 *.dat
 test.py
 *.db
+config.json
