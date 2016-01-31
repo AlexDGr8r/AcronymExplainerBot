@@ -30,7 +30,6 @@ def addAcronyms(acronym, descriptions, more_results):
         try:
             args = (acronym.upper(), desc)
             _conn.execute("INSERT INTO ACRONYMS (ACRONYM,DESCRIPTION) VALUES (?, ?)", args)
-            print "Added a new acronym and description to local database"
             added += 1
         except sqlite3.IntegrityError:
             print "Did not add new acronym since it was already in table"

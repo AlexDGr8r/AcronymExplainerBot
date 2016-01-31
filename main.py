@@ -61,14 +61,15 @@ def getDescriptionsFromAPI(acronym, uid, token):
     xmlfile.close()
     jsondata = xmltodict.parse(data)
     results = jsondata['results']
-    terms = results['result']
     descriptions = []
-    for term in terms:
-        desc = term['definition']
-        if desc in descriptions:
-            print('Duplicate defintion, ignoring')
-            continue
-        descriptions.append(desc)
+    if results is not None:
+        terms = results['result']
+        for term in terms:
+            desc = term['definition']
+            if desc in descriptions:
+                # ignore duplicate definitions
+                continue
+            descriptions.append(desc)
     return descriptions
 
 ###################### Begin Script ######################
@@ -82,9 +83,7 @@ cache = load_cache(CACHE_FILE_NAME)
 
 # Abbreviations.com API credentials
 API_UID = config['API_UID']
-print('UID=%s' % API_UID)
 API_TOKEN = config['API_Token']
-print('token=%s' % API_TOKEN)
 
 # Compile subreddits we want to pull the comments from
 subreddits = ''
@@ -95,16 +94,16 @@ subreddits = subreddits[:-1]
 try:
     while True:
         o.refresh()
-        print 'refreshed and ready to go!'
+        print 'Checking for new comments...'
         multireddits = r.get_subreddit(subreddits)
         comments = multireddits.get_comments()
         for comment in comments:
             if comment.id in cache:
-                print('Breaking...')
+                print('No new comments')
                 break
 
             cache.append(comment.id)
-            print('appended to cache')
+            print('found new comment')
 
             if comment.author.name == "AcronymExplainerBot":
                 print('ignoring my own comment')
@@ -113,6 +112,7 @@ try:
             match = re.match(r'!acro(nym)?s?bot (\w+)', comment.body.lstrip(), re.I)
             if match:
                 acro = match.group(2).upper()   # the acronym is subgroup 2
+                print "acronym requested: %s" % acro
                 local_results = acrodb.getAcronym(acro)
                 if len(local_results) > 0:      # Found in local database, no need to use API
                     acrodb.increasePopularity(acro)
@@ -125,8 +125,10 @@ try:
                             more = True
                         acrodb.addAcronyms(acro, descriptions, more)
                         reply_to_comment(comment, acro, descriptions)
+                    else:
+                        print "Could not find anything for %s" % acro
 
-        print 'Going to sleep'
+        print 'Resting'
         time.sleep(10)
 except (KeyboardInterrupt, SystemExit):
     save_cache(CACHE_FILE_NAME)
