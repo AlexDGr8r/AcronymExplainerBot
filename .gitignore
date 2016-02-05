@@ -63,3 +63,4 @@ oauth.txt
 test.py
 *.db
 config.json
+oauth.ini

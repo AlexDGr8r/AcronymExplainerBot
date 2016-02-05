@@ -15,6 +15,7 @@ CACHE_FILE_NAME = 'cache.dat'
 
 r = praw.Reddit(user_agent=USER_AGENT)
 o = OAuth2Util.OAuth2Util(r)
+comment_queue = []
 
 def load_cache(filename):
     try:
@@ -49,11 +50,11 @@ def reply_to_comment(comment, acronym, acronyms):
     text += "***\n^(I am simply a bot. If the information I've displayed is incorrect, please message my creator /u/AlexDGr8r.)"
     try:
         comment.reply(text)
+        print('Replied to a comment')
     except praw.errors.RateLimitExceeded as error:
-        print("Sleeping for %d seconds due to exceeding rate limit" % error.sleep_time)
-        time.sleep(error.sleep_time)
-        comment.reply(text)
-    print('Replied to a comment')
+        comm_dict = {"comment":comment, "text":text, "time":time.time() + error.sleep_time}
+        comment_queue.append(comm_dict)
+        print('Comment added to queue due to exceeding rate limit')
 
 def getDescriptionsFromAPI(acronym, uid, token):
     xmlfile = urllib2.urlopen('http://www.stands4.com/services/v2/abbr.php?uid=%s&tokenid=%s&term=%s' % (uid, token, acronym.upper()))
@@ -94,6 +95,20 @@ subreddits = subreddits[:-1]
 try:
     while True:
         o.refresh()
+
+        # Check backlog
+        curr_time = time.time()
+        for comment_dict in comment_queue:
+            if curr_time >= comment_dict["time"]:
+                try:
+                    comment_dict["comment"].reply(comment_dict["text"])
+                    print("backlogged comment replied to")
+                    comment_queue.remove(comment_dict)
+                except praw.errors.RateLimitExceeded as error:
+                    comment_dict["time"] = curr_time + error.sleep_time
+                    print("backlogged comment still exceeding rate limit")
+
+        # Check new comments
         print 'Checking for new comments...'
         multireddits = r.get_subreddit(subreddits)
         comments = multireddits.get_comments()
